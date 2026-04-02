@@ -1,0 +1,5 @@
+# ninja log v5
+1	541	1775129651109490741	CMakeFiles/opusjni.dir/opusjni.c.o	aa24386e1bdb7631
+541	798	1775129651366489032	/build/build/app/intermediates/cxx/RelWithDebInfo/1r2q1s1b/obj/arm64-v8a/libopusjni.so	e425c9b46b46b8da
+1	199	1775131244373847652	CMakeFiles/opusjni.dir/opusjni.c.o	aa24386e1bdb7631
+199	277	1775131244455847042	/build/build/app/intermediates/cxx/RelWithDebInfo/1r2q1s1b/obj/arm64-v8a/libopusjni.so	e425c9b46b46b8da

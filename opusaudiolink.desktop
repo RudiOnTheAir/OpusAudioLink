@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Name=OpusAudioLink
+GenericName=Audio Übertragung
+Comment=Bidirektionale Opus Audio Übertragung via UDP/WireGuard
+Exec=python3 /home/wolf/APP/opusaudiolink/audio_gui.py
+Icon=audio-input-microphone
+Terminal=false
+Type=Application
+Categories=Audio;Network;
+Keywords=audio;opus;reporter;studio;broadcast;
+StartupNotify=true

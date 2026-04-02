@@ -1,0 +1,28 @@
+buildscript {
+    ext.kotlin_version = "1.9.22"
+    repositories { google(); mavenCentral() }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.3.1"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+    // AGP-Version für alle Subprojekte erzwingen
+    configurations.all {
+        resolutionStrategy {
+            force "com.android.tools.build:gradle:8.3.1"
+        }
+    }
+}
+allprojects {
+    repositories { google(); mavenCentral() }
+    // AGP-Version in allen Subprojekten erzwingen
+    configurations.all {
+        resolutionStrategy {
+            force "com.android.tools.build:gradle:8.3.1"
+        }
+    }
+}
+rootProject.buildDir = "../build"
+subprojects {
+    project.buildDir = "${rootProject.buildDir}/${project.name}"
+}
+tasks.register("clean", Delete) { delete rootProject.buildDir }

@@ -1,0 +1,51 @@
+# Build-Output
+dist/
+build/
+*.apk
+*.exe
+__pycache__/
+*.pyc
+*.spec.bak
+
+# Flutter generiert
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+opusaudiolink_reporter/.dart_tool/
+opusaudiolink_reporter/build/
+opusaudiolink_reporter/android/.gradle/
+opusaudiolink_reporter/android/app/build/
+opusaudiolink_reporter/android/local.properties
+
+# Keystore – NIEMALS ins Repo!
+*.keystore
+*.jks
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+audio_gui.py.*
+session.txt
+git/
+gradle-wrapper.properties
+session.txt
+audio_gui.py.*
+git/
+gradle-wrapper.properties
+doc/
+main_activity.kt
+audio_gui_windows_debug.spec
