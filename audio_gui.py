@@ -1158,6 +1158,14 @@ QPushButton#btn_mode_inactive {
     border-color: #444;
     color: #888;
 }
+QPushButton#btn_close {
+    background: #3a1a1a;
+    border-color: #7a3a3a;
+    color: #cc6666;
+    font-weight: bold;
+    padding: 6px 12px;
+}
+QPushButton#btn_close:hover { background: #5c2222; color: #ff8888; }
 """
 
 
@@ -1470,6 +1478,11 @@ class MainWindow(QMainWindow):
         btn_row.addWidget(self.btn_ban)
         btn_row.addStretch()
         btn_row.addWidget(self.btn_attention)
+        self.btn_close = QPushButton("Quit")
+        self.btn_close.setObjectName("btn_close")
+        self.btn_close.setToolTip(f"Close application (v{VERSION})")
+        self.btn_close.clicked.connect(self.close)
+        btn_row.addWidget(self.btn_close)
         root.addLayout(btn_row)
 
         # ── Timer für GUI-Update ───────────────────
