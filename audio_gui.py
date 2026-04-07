@@ -32,7 +32,7 @@ try:
         QStackedWidget, QLineEdit, QFrame, QSizePolicy
     )
     from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject
-    from PyQt6.QtGui import QPainter, QColor, QLinearGradient, QFont, QPen
+    from PyQt6.QtGui import QPainter, QColor, QLinearGradient, QFont, QPen, QPixmap
 except ImportError as e:
     print(f"Import error: {e}")
     print("Please install: pip install sounddevice numpy PyQt6")
@@ -1179,7 +1179,7 @@ class MainWindow(QMainWindow):
         self.helo_status_signal.connect(self._apply_helo_status)
         self._start_after_stop.connect(self._do_start_now)
         self.setWindowTitle(f"OpusAudioLink v{VERSION}")
-        self.setMinimumSize(620, 480)
+        self.setMinimumSize(720, 560)
         self.setStyleSheet(DARK)
 
         self._channels = 2
@@ -1437,8 +1437,12 @@ class MainWindow(QMainWindow):
         status_layout.addWidget(self.lbl_latency_avg)
         status_layout.addWidget(self.lbl_frames)
         status_layout.addWidget(self.lbl_dropouts)
-        status_layout.addWidget(self.lbl_conn_details)
+        # conn_details + Dreieck nebeneinander in unterster Zeile
+        bottom_row = QHBoxLayout()
+        bottom_row.addWidget(self.lbl_conn_details, stretch=1)
+        # btn_attention wird nach Erstellung hier eingefügt (siehe unten)
         status_layout.addStretch()
+        status_layout.addLayout(bottom_row)
 
         meter_row.addWidget(status_box, stretch=1)
         root.addLayout(meter_row)
@@ -1459,10 +1463,58 @@ class MainWindow(QMainWindow):
         self.btn_ban.setVisible(False)
         self.btn_ban.setEnabled(False)
         self.btn_ban.clicked.connect(self._on_ban)
-        self.btn_attention = QPushButton("⚠  ⚠  ⚠")
-        self.btn_attention.setObjectName("btn_attention")
-        self.btn_attention.setToolTip("Send attention signal !")
-        self.btn_attention.clicked.connect(self._on_attention)
+        # Attention-Button als Bild-Label (achtung.png)
+        def _make_warning_pixmap(color_outer, color_inner, color_mark):
+            """Zeichnet ein Warndreieck als QPixmap (transparent)."""
+            size = 60
+            px = QPixmap(size, size)
+            px.fill(Qt.GlobalColor.transparent)
+            p = QPainter(px)
+            p.setRenderHint(QPainter.RenderHint.Antialiasing)
+            from PyQt6.QtGui import QPolygonF, QPen
+            from PyQt6.QtCore import QPointF
+            cx = size / 2.0
+            tri = QPolygonF([QPointF(cx, 3.0), QPointF(size-3.0, size-4.0), QPointF(3.0, size-4.0)])
+            # Erst farbig füllen (ganzes Dreieck)
+            p.setBrush(QColor(color_outer))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawPolygon(tri)
+            # Dann inneres Dreieck mit Innenfarbe übermalen – gleichmäßig skaliert vom Zentrum
+            scale = 0.72
+            cx2 = cx
+            cy2 = (3.0 + size-4.0 + size-4.0) / 3.0  # Schwerpunkt Y
+            inner = QPolygonF([
+                QPointF(cx2 + (p2.x()-cx2)*scale, cy2 + (p2.y()-cy2)*scale)
+                for p2 in [QPointF(cx, 3.0), QPointF(size-3.0, size-4.0), QPointF(3.0, size-4.0)]
+            ])
+            p.setBrush(QColor(color_inner))
+            p.drawPolygon(inner)
+            # Ausrufezeichen
+            p.setBrush(QColor(color_mark))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.drawRoundedRect(int(cx)-3, 26, 6, 16, 2, 2)
+            p.drawEllipse(int(cx)-3, 45, 6, 6)
+            p.end()
+            return px
+
+        self._attn_pixmap_active   = _make_warning_pixmap("#e53e00", "#f0f0f0", "#111111")
+        self._attn_pixmap_inactive = _make_warning_pixmap("#777777", "#cccccc", "#555555")
+
+        self.btn_attention = QLabel()
+        self.btn_attention.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.btn_attention.setToolTip("Send attention signal!")
+        self.btn_attention.setCursor(Qt.CursorShape.PointingHandCursor)
+        if self._attn_pixmap_inactive is not None:
+            self.btn_attention.setPixmap(self._attn_pixmap_inactive)
+        else:
+            self.btn_attention.setText("⚠")
+        self.btn_attention.setStyleSheet(
+            "QLabel { border: none; padding: 0px; background: transparent; }")
+        self.btn_attention.mousePressEvent = lambda e: self._on_attention()
+
+        # Dreieck rechts in bottom_row einfügen
+        self.btn_attention.setFixedSize(60, 60)
+        bottom_row.addWidget(self.btn_attention, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         self.btn_ping = QPushButton("📶  Test Latency")
         self.btn_ping.setObjectName("btn_monitor")
         self.btn_ping.setToolTip("Send UDP pings to the studio and estimate round-trip latency")
@@ -1477,7 +1529,6 @@ class MainWindow(QMainWindow):
         btn_row.addWidget(self.btn_stop)
         btn_row.addWidget(self.btn_ban)
         btn_row.addStretch()
-        btn_row.addWidget(self.btn_attention)
         self.btn_close = QPushButton("Quit")
         self.btn_close.setObjectName("btn_close")
         self.btn_close.setToolTip(f"Close application (v{VERSION})")
@@ -2230,18 +2281,18 @@ class MainWindow(QMainWindow):
         attn_tx = (now - shared.get("attention_tx_time", 0)) < 30
         attn_rx = (now - shared.get("attention_rx_time", 0)) < 30
         attn_active = attn_tx or attn_rx
-        if attn_active and self._blink_state:
-            self.btn_attention.setStyleSheet(
-                "background: #1a1a1a; color: #ff4400; border: 2px solid #ff4400; "
-                "font-size: 18px; border-radius: 4px;")
-        elif attn_active:
-            self.btn_attention.setStyleSheet(
-                "background: #1a1a1a; color: #661100; border: 2px solid #661100; "
-                "font-size: 18px; border-radius: 4px;")
+        if attn_active:
+            # Aktiv: Bild blinkt zwischen farbig und grau
+            if self._blink_state:
+                if self._attn_pixmap_active is not None:
+                    self.btn_attention.setPixmap(self._attn_pixmap_active)
+            else:
+                if self._attn_pixmap_inactive is not None:
+                    self.btn_attention.setPixmap(self._attn_pixmap_inactive)
         else:
-            self.btn_attention.setStyleSheet(
-                "background: #2a2a2a; color: #ffffff; border: 1px solid #ffffff; "
-                "font-size: 18px; border-radius: 4px;")
+            # Inaktiv: dauerhaft grau
+            if self._attn_pixmap_inactive is not None:
+                self.btn_attention.setPixmap(self._attn_pixmap_inactive)
 
     def _save_config(self):
         """Aktuelle Einstellungen in Config-Datei speichern."""
